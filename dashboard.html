@@ -357,11 +357,11 @@ if (typeof module !== 'undefined') module.exports = { get ROOMS() { return ROOMS
     poll = setInterval(async () => {
       if (busy) return; busy = true;
       try {
-        const ac = new AbortController(), to = setTimeout(() => ac.abort(), 1500), r = await fetch(base + '/api/samples?since=' + S.seq, { signal: ac.signal, cache: 'no-store' }); clearTimeout(to);
+        const ac = new AbortController(), to = setTimeout(() => ac.abort(), 3000), r = await fetch(base + '/api/samples?since=' + S.seq, { signal: ac.signal, cache: 'no-store' }); clearTimeout(to);
         const j = await r.json(); fails = 0; if (j.seq < S.seq) S.seq = 0; const now = performance.now();
         (j.samples || []).forEach(a => S.samples.push({ id: a[1], rssi: a[2], t: now - a[3] })); S.seq = j.seq; S.link = true;
         setPill('Receiver connected · ' + (j.samples || []).length + ' packets', 'ok'); $('n-live').textContent = 'Linked to ' + (j.device || 'receiver') + '. Packets are real Bluetooth advertisements.';
-      } catch (e) { if (++fails > 3) { S.link = false; setPill('No link to phone', 'warn'); } }
+      } catch (e) { if (++fails > 8) { S.link = false; setPill('No link to phone', 'warn'); } }
       busy = false;
     }, 250);
   }

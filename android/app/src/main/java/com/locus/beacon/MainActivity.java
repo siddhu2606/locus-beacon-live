@@ -242,7 +242,10 @@ public class MainActivity extends Activity {
         @Override public void onScanFailed(int e) { scanning = false; if (status != null) status.setText("Scan failed (code " + e + "). Turn Bluetooth off and on."); }
     };
 
+    private int anySeen = 0;
+
     private void handle(ScanResult r) {
+        anySeen++;
         if (r.getScanRecord() == null) return;
         SparseArray<byte[]> m = r.getScanRecord().getManufacturerSpecificData();
         byte[] d = m == null ? null : m.get(COMPANY);
@@ -261,17 +264,16 @@ public class MainActivity extends Activity {
         } catch (Exception e) { status.setText("Could not start server: " + e.getMessage()); return; }
         BluetoothAdapter a = adapter();
         if (a == null || !a.isEnabled()) { status.setText("Turn Bluetooth on first."); return; }
-        if (Build.VERSION.SDK_INT < 31 && Build.VERSION.SDK_INT >= 28) {
+        if (Build.VERSION.SDK_INT >= 28) {
             LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             if (lm != null && !lm.isLocationEnabled()) { status.setText("Turn Location ON (Android needs it for Bluetooth scanning). Nothing is sent anywhere."); return; }
         }
         scanner = a.getBluetoothLeScanner();
         if (scanner == null) { status.setText("Bluetooth scanner unavailable."); return; }
-        ScanFilter f = new ScanFilter.Builder().setManufacturerData(COMPANY, new byte[]{'L', 'C'}, new byte[]{(byte) 0xFF, (byte) 0xFF}).build();
+        // No hardware filter: some phones (e.g. certain OPPO/ColorOS builds) drop manufacturer-data filters. We filter in handle().
         ScanSettings s = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).setReportDelay(0).build();
-        List<ScanFilter> fl = new ArrayList<>();
-        fl.add(f);
-        scanner.startScan(fl, s, scanCb);
+        anySeen = 0;
+        scanner.startScan(null, s, scanCb);
         scanning = true;
         scanStarted = System.currentTimeMillis();
         for (int i = 0; i < 7; i++) { counts[i] = 0; lastSeen[i] = 0; }
@@ -298,7 +300,13 @@ public class MainActivity extends Activity {
                     sb.append("Beacon ").append(i).append(live ? String.format("  %4d dBm  %4.1f/s", lastRssi[i], counts[i] / secs) : "  –").append('\n');
                 }
                 table.setText(sb.toString());
-                if (scanning) status.setText(heard + " beacon" + (heard == 1 ? "" : "s") + " in range · " + (server == null ? 0 : server.total()) + " packets");
+                if (scanning) {
+                    status.setText(heard + " beacon" + (heard == 1 ? "" : "s") + " in range · " + (server == null ? 0 : server.total()) + " packets");
+                    sb.append("\nAny Bluetooth packets heard: ").append(anySeen);
+                    if (anySeen == 0 && now - scanStarted > 6000) sb.append("\n-> Scanning hears nothing. Check: Location ON, Nearby devices + Location permission allowed, Bluetooth off/on.");
+                    else if (anySeen > 0 && server != null && server.total() == 0 && now - scanStarted > 8000) sb.append("\n-> Scanning works but no beacon packets. Is the other phone advertising and close?");
+                    table.setText(sb.toString());
+                }
                 StringBuilder u = new StringBuilder("Dashboard address:\n");
                 for (String ip : ips()) u.append("http://").append(ip).append(':').append(PORT).append("/\n");
                 if (ips().isEmpty()) u.append("(no network yet: switch on this phone's hotspot, or join Wi-Fi)\nOn this phone: http://127.0.0.1:").append(PORT).append("/\n");
