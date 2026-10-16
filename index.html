@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LOCUS Beacon · Real Bluetooth indoor positioning</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+:root{--ink:#0B3A4A;--ink2:#3F6572;--ink3:#7A9AA6;--bg:#F4FCFE;--line:#CDEBF3;--card:#fff;--em:#10B981;--em-d:#0B8A5E;--grad:linear-gradient(135deg,#22C3E6,#10B981)}
+@media (prefers-color-scheme:dark){:root{--ink:#E3F4F8;--ink2:#A9C6CF;--ink3:#6F8F9A;--bg:#0A1A20;--line:#1E3944;--card:#10262E}}
+*{box-sizing:border-box;margin:0}body{font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:20px 16px 60px}
+main{max-width:860px;margin:0 auto}h1{font-size:30px;letter-spacing:.04em}h1 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{color:var(--ink2);margin:8px 0 22px;font-size:17px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:26px}
+a.card{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}a.card:hover{border-color:var(--em)}
+a.card b{display:block;font-size:17px;margin-bottom:4px}a.card span{color:var(--ink2);font-size:14px}a.card.pri{background:var(--grad);border:0;color:#fff}a.card.pri span{color:#fff;opacity:.92}
+h2{font-size:20px;margin:26px 0 8px}p,li{color:var(--ink2)}ol,ul{padding-left:22px}li{margin:5px 0}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--ink3);font-size:12px;text-transform:uppercase}
+.warn{background:rgba(245,165,36,.16);border-radius:14px;padding:12px 14px;color:var(--ink2);margin:12px 0}
+code{background:rgba(34,195,230,.14);padding:1px 6px;border-radius:6px;font-size:.92em}
+</style>
+</head>
+<body>
+<main>
+<h1>LOCUS <span>Beacon</span></h1>
+<p class="lead">Indoor positioning from real Bluetooth signal strength. One Android phone is the receiver, two or more are beacons. The estimate and its uncertainty appear live on a laptop. It works with no internet.</p>
+<div class="cards">
+  <a class="card pri" href="https://github.com/siddhu2606/locus-beacon-live/releases/latest"><b>⬇ Android app (APK)</b><span>Install on 3 phones: 2 or more beacons, 1 receiver.</span></a>
+  <a class="card" href="dashboard.html?demo"><b>Live dashboard (demo)</b><span>Simulated Bluetooth, no phones needed. Try 2, 3, 4 or 6 beacons.</span></a>
+  <a class="card" href="docs/BEACON_STUDY.html"><b>How many beacons?</b><span>Simulation study: 2 vs 3 vs 4 vs 6, triangle vs line.</span></a>
+  <a class="card" href="https://github.com/siddhu2606/locus-beacon-live"><b>Source code</b><span>Android app, dashboard, engine, tests.</span></a>
+  <a class="card" href="https://github.com/siddhu2606/locus-room-live"><b>Live Room (earlier project)</b><span>3D room simulator with phone-motion pairing.</span></a>
+</div>
+
+<h2>How it works</h2>
+<ol>
+  <li><b>Beacon phones</b> broadcast a small Bluetooth Low Energy packet carrying their beacon number (1–6). Place them at known spots: for 3 beacons, a triangle.</li>
+  <li>The <b>receiver phone</b> scans, measures the signal strength (RSSI) from each beacon and serves the dashboard over its own hotspot or Wi-Fi.</li>
+  <li>The <b>laptop</b> opens the phone's address, converts RSSI to distance, and runs the LOCUS filter: trust scoring per beacon, motion history, a position with a 90% uncertainty ellipse.</li>
+</ol>
+
+<h2>Offline</h2>
+<ul>
+  <li>Bluetooth is phone to phone. No internet.</li>
+  <li>The dashboard is bundled inside the APK. The receiver serves it at <code>http://&lt;phone-ip&gt;:8080/</code>. Turn on the receiver's hotspot, join it from the laptop, and nothing touches the internet.</li>
+  <li>Even without a laptop: tap <b>Open dashboard on this phone</b> in the receiver.</li>
+  <li>This GitHub page is a demo and download page only. A secure (https) page cannot read from a phone's plain http address, so the real live view is the one the phone serves.</li>
+</ul>
+
+<h2>How many beacons? (simulation, 8 × 6 m room)</h2>
+<p>Median position error in metres. RSSI noise as in the row label, packet loss and body-blocking included. 24 random walks per cell.</p>
+<table id="tb"><thead><tr><th>Layout</th><th>calm 2 dB</th><th>typical 4 dB</th><th>harsh 6 dB</th></tr></thead><tbody></tbody></table>
+<p style="margin-top:8px">A triangle of 3 is a good minimum and a square of 4 is the sensible deployment. Details and caveats in <a href="docs/BEACON_STUDY.html">the study</a>.</p>
+
+<div class="warn"><b>Honest limits.</b> The Android app has been compiled and its server and dashboard tested with a mock phone, but it has <b>not</b> yet been tried on real Bluetooth hardware by its author. Bluetooth RSSI is noisy (4–8 dB is normal), so expect 1–2 m typical error, not centimetres. A phone can only be a beacon if it supports BLE advertising (most Android phones from the last 6 years do). iPhones cannot run this app.</div>
+</main>
+<script>
+fetch('docs/beacon_study.json').then(r=>r.json()).then(d=>{const conds=Object.keys(d),lay=Object.keys(d[conds[0]]),tb=document.querySelector('#tb tbody');
+lay.forEach(l=>{const tr=document.createElement('tr');tr.innerHTML='<td>'+l+'</td>'+conds.map(c=>'<td>'+d[c][l].median.toFixed(2)+'</td>').join('');tb.appendChild(tr)})}).catch(()=>{});
+</script>
+</body>
+</html>

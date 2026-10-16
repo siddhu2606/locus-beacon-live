@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LOCUS Beacon · Live</title>
+<style>
+:root{--aqua:#22C3E6;--em:#10B981;--em-d:#0B8A5E;--ink:#0B3A4A;--ink2:#3F6572;--ink3:#7A9AA6;--bg:#F4FCFE;--line:#CDEBF3;--amber:#F5A524;--coral:#EF6A6A;--card:#fff;--cv:#F7FDFF;--grid:#DCEFF5;--grad:linear-gradient(135deg,#22C3E6,#10B981)}
+@media (prefers-color-scheme:dark){:root{--ink:#E3F4F8;--ink2:#A9C6CF;--ink3:#6F8F9A;--bg:#0A1A20;--line:#1E3944;--card:#10262E;--cv:#0C1E25;--grid:#1B3640}}
+*{box-sizing:border-box;margin:0}
+body{font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:12px}
+h1{font-size:18px;letter-spacing:.08em}h1 small{font-size:11px;font-weight:600;color:var(--em-d);background:rgba(16,185,129,.15);padding:2px 8px;border-radius:99px;margin-left:8px;letter-spacing:0}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:8px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+.pill{margin-left:auto;display:inline-flex;gap:7px;align-items:center;padding:5px 12px;border-radius:99px;background:var(--card);border:1px solid var(--line);font-weight:600;font-size:13px}
+.pill i{width:9px;height:9px;border-radius:50%;background:var(--ink3)}.pill.ok i{background:var(--em)}.pill.warn i{background:var(--amber)}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:12px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px}
+canvas{width:100%;display:block;border-radius:12px;background:var(--cv);touch-action:none;cursor:crosshair}
+button,input,select{font:inherit;color:inherit}
+button{border:1.5px solid var(--line);background:var(--card);border-radius:99px;padding:6px 14px;font-weight:600;cursor:pointer}
+button.pri{background:var(--grad);border:0;color:#fff}button.on{background:var(--em);border-color:var(--em);color:#fff}button:disabled{opacity:.5}
+input[type=text],input[type=number],select{border:1.5px solid var(--line);border-radius:10px;padding:5px 8px;background:var(--card);width:100%}
+input[type=range]{width:100%;accent-color:var(--em)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}.kv div{background:rgba(34,195,230,.1);border-radius:10px;padding:6px 9px}.kv small{display:block;color:var(--ink3);font-size:11px;font-weight:700}.kv b{font-size:17px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}th{text-align:left;color:var(--ink3);font-size:11px;text-transform:uppercase}td,th{padding:4px 3px;border-bottom:1px solid var(--line)}
+td input[type=number]{width:54px;padding:2px 4px}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;min-width:44px}.bar i{display:block;height:100%;background:var(--em)}
+.note{color:var(--ink2);font-size:12.5px}.note.warn{background:rgba(245,165,36,.15);border-radius:10px;padding:8px 10px}
+label.f{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:6px}label.f .v{float:right;color:var(--ink)}
+</style>
+</head>
+<body>
+<header><h1>LOCUS<small>Beacon Live</small></h1><span class="pill" id="pill"><i></i><span id="pill-t">Demo</span></span></header>
+<div class="grid">
+<div>
+  <div class="card"><canvas id="cv" width="900" height="620"></canvas>
+    <div class="kv"><div><small>Position (m)</small><b id="k-pos">–</b></div><div><small>± 90% radius</small><b id="k-unc">–</b></div><div><small>Beacons heard</small><b id="k-n">–</b></div><div><small>Error vs truth</small><b id="k-err">–</b></div></div>
+    <div class="note" style="margin-top:8px" id="n-map">Click the map where you are really standing to log an error sample (live mode).</div>
+  </div>
+  <div class="card"><h2>Accuracy log (CEP)</h2>
+    <div class="kv"><div><small>Samples</small><b id="s-n">0</b></div><div><small>Median</small><b id="s-50">–</b></div><div><small>95th</small><b id="s-95">–</b></div><div><small>Inside ellipse</small><b id="s-cov">–</b></div></div>
+    <div class="row" style="margin-top:8px"><button id="b-clear">Clear</button><button id="b-csv">Download CSV</button></div>
+  </div>
+</div>
+<div>
+  <div class="card"><h2>Source</h2>
+    <div class="row"><button id="b-demo" class="on">Demo (simulated receiver)</button><button id="b-live">Receiver phone</button></div>
+    <div id="live-box" style="display:none">
+      <div class="row"><input type="text" id="i-host" placeholder="phone IP e.g. 192.168.43.1:8080" style="flex:1"><button class="pri" id="b-conn">Connect</button></div>
+      <div class="note" id="n-live">Open the <b>LOCUS Beacon</b> app on the receiver phone, tap Receiver. It shows the address. This page works with no internet: the phone serves it.</div>
+    </div>
+  </div>
+  <div class="card"><h2>Room and beacons</h2>
+    <div class="row"><label class="f" style="flex:1">Width m<input type="number" id="i-W" value="8" min="2" max="40" step="0.5"></label><label class="f" style="flex:1">Depth m<input type="number" id="i-H" value="6" min="2" max="30" step="0.5"></label></div>
+    <div class="row"><button data-lay="2">2 · pair</button><button data-lay="3" class="on">3 · triangle</button><button data-lay="4">4 · square</button><button data-lay="6">6 · ring</button></div>
+    <table id="tb"><thead><tr><th>#</th><th>On</th><th>x</th><th>y</th><th>RSSI</th><th>Range</th><th>Trust</th><th>1 m</th></tr></thead><tbody></tbody></table>
+    <div class="note" style="margin-top:6px" id="n-why">Beacon # is the ID you pick in the app on each beacon phone. Untick one to test losing a beacon.</div>
+  </div>
+  <div class="card"><h2>Radio model</h2>
+    <label class="f">Path-loss exponent n <span class="v" id="v-n">2.2</span><input type="range" id="i-n" min="1.6" max="4" step="0.1" value="2.2"></label>
+    <label class="f">RSSI at 1 m (default) <span class="v" id="v-p">-59 dBm</span><input type="range" id="i-p" min="-80" max="-40" step="1" value="-59"></label>
+    <div class="note">Better: put the receiver 1 m from a beacon and press its <b>1 m</b> button. It averages 3 s and stores that beacon's own value. Demo noise: <input type="number" id="i-sig" value="4" min="0" max="10" step="0.5" style="width:60px"> dB</div>
+  </div>
+</div>
+</div>
+<script>
+/*__ENGINE__*/
+/*__APP__*/
+</script>
+</body>
+</html>
