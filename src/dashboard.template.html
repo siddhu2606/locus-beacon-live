@@ -30,14 +30,20 @@ td input[type=number]{width:54px;padding:2px 4px}
 .bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;min-width:44px}.bar i{display:block;height:100%;background:var(--em)}
 .note{color:var(--ink2);font-size:12.5px}.note.warn{background:rgba(245,165,36,.15);border-radius:10px;padding:8px 10px}
 label.f{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:6px}label.f .v{float:right;color:var(--ink)}
+.warnbox{border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:13px;line-height:1.5}
+.warnbox.bad{background:rgba(239,106,106,.16);border:1px solid var(--coral)}.warnbox.warn{background:rgba(245,165,36,.16);border:1px solid var(--amber)}.warnbox.ok{background:rgba(16,185,129,.12);border:1px solid var(--em)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ink3);margin-left:4px;vertical-align:middle}.dot.ok{background:var(--em)}.dot.warn{background:var(--amber)}.dot.bad{background:var(--coral)}
+.gcal{border:1.5px dashed var(--aqua);border-radius:12px;padding:10px;margin:8px 0;display:none}.gcal .prog{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin:6px 0}.gcal .prog i{display:block;height:100%;width:0;background:var(--grad)}
+.mini{padding:3px 10px;font-size:12px}select{width:auto}
 </style>
 </head>
 <body>
 <header><h1>LOCUS<small>Beacon Live</small></h1><span class="pill" id="pill"><i></i><span id="pill-t">Demo</span></span></header>
 <div class="grid">
 <div>
-  <div class="card"><canvas id="cv" width="900" height="620"></canvas>
+  <div class="card"><div id="warn" class="warnbox ok" style="display:none"></div><canvas id="cv" width="900" height="620"></canvas>
     <div class="kv"><div><small>Position (m)</small><b id="k-pos">–</b></div><div><small>± 90% radius</small><b id="k-unc">–</b></div><div><small>Beacons heard</small><b id="k-n">–</b></div><div><small>Error vs truth</small><b id="k-err">–</b></div></div>
+    <div class="row" style="margin-top:8px"><button id="b-trail" class="on mini">Trail on</button><label class="f" style="flex:1;margin:0;min-width:140px">Trail length <span class="v" id="v-tl">20 s</span><input type="range" id="i-tl" min="5" max="120" step="5" value="20"></label><button id="b-tclr" class="mini">Clear trail</button><span class="note" id="n-path">Path: 0.0 m</span></div>
     <div class="note" style="margin-top:8px" id="n-map">Click the map where you are really standing to log an error sample (live mode).</div>
   </div>
   <div class="card"><h2>Accuracy log (CEP)</h2>
@@ -57,7 +63,15 @@ label.f{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin-bo
     <div class="row"><label class="f" style="flex:1">Width m<input type="number" id="i-W" value="8" min="2" max="40" step="0.5"></label><label class="f" style="flex:1">Depth m<input type="number" id="i-H" value="6" min="2" max="30" step="0.5"></label></div>
     <div class="row"><button data-lay="2">2 · pair</button><button data-lay="3" class="on">3 · triangle</button><button data-lay="4">4 · square</button><button data-lay="6">6 · ring</button></div>
     <table id="tb"><thead><tr><th>#</th><th>On</th><th>x</th><th>y</th><th>RSSI</th><th>Range</th><th>Trust</th><th>1 m</th></tr></thead><tbody></tbody></table>
+    <div class="row" style="margin-top:8px"><button class="pri mini" id="b-gcal">Guided calibration</button><span class="note" id="n-cal">Walks you through each beacon, one at a time.</span></div>
+    <div class="gcal" id="gcal"><b id="g-title"></b><div class="note" id="g-text"></div><div class="prog"><i id="g-bar"></i></div><div class="row" style="margin:0"><button class="pri mini" id="g-go">Measure (3 s)</button><button class="mini" id="g-skip">Skip</button><button class="mini" id="g-stop">Stop</button></div></div>
     <div class="note" style="margin-top:6px" id="n-why">Beacon # is the ID you pick in the app on each beacon phone. Untick one to test losing a beacon.</div>
+  </div>
+  <div class="card"><h2>Saved layouts</h2>
+    <div class="row"><input type="text" id="l-name" placeholder="Name, e.g. Lab 8x6" style="flex:1;min-width:120px"><button class="pri mini" id="l-save">Save</button></div>
+    <div class="row"><select id="l-sel" style="flex:1;min-width:120px"></select><button class="mini" id="l-load">Load</button><button class="mini" id="l-del">Delete</button></div>
+    <div class="row"><button class="mini" id="l-exp">Export file</button><button class="mini" id="l-imp">Import file</button><input type="file" id="l-file" accept=".json,application/json" style="display:none"></div>
+    <div class="note" id="l-note">Saves room size, beacon positions, on/off and 1 m calibrations in this browser. The current setup is also restored automatically next time.</div>
   </div>
   <div class="card"><h2>Radio model</h2>
     <label class="f">Path-loss exponent n <span class="v" id="v-n">2.2</span><input type="range" id="i-n" min="1.6" max="4" step="0.1" value="2.2"></label>

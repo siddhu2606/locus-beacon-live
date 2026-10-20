@@ -11,6 +11,13 @@ Indoor positioning from **real Bluetooth signal strength** with phones as beacon
 2. **Receiver phone** scans, records RSSI per beacon, and runs a tiny built-in HTTP server on port 8080 that serves the dashboard and `/api/samples?since=N`.
 3. **Laptop** opens `http://<receiver-ip>:8080/`. The page converts RSSI to range (log-distance model, per-beacon 1 m calibration), then runs the LOCUS engine: per-beacon trust scoring, particle filter with motion history, a position and a 90% ellipse. Range error is modelled as proportional to range (RSSI error is multiplicative in distance).
 
+## Dashboard tools (v1.2)
+- **Beacon health:** a status dot per beacon and a banner that names the problem: no packets, weak signal, low packet rate, down-weighted, fewer than 3 heard, or beacons almost in a line.
+- **Movement trail:** fading trail, adjustable length (5-120 s), clear/off, and walked path length.
+- **Guided calibration:** walks through each beacon for the 1 m reading, rejecting too few packets or a jumpy signal.
+- **Saved layouts:** named layouts in the browser, JSON export/import, and the last setup restored automatically.
+- Test: `node scripts/test_features.js`.
+
 ## Offline
 No internet anywhere: BLE is phone to phone, the dashboard is bundled in the APK, and the receiver's hotspot (or any Wi-Fi) carries the page. The receiver also has **Open dashboard on this phone** for a one-phone view. The GitHub Pages site only hosts the demo and download.
 
